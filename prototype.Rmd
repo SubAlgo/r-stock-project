@@ -23,19 +23,19 @@ library("xlsx")
 ############## init ##############
 ```{r}
 symbol <- "cvx"
+#Date search
 start_date <- "2013-07-20"
 end_date <- "2016-09-18"
 
 #Create File name
 
-fileName <- paste(symbol, "Daily-Result", sep="-")
-print(fileName)
+fileName <- paste(symbol, "Daily-Result.xlsx", sep="-")
 ```
 --------------- init ---------------
 
 
 ############## Create Predict DataFrame ##############
-#Set predict date (x = predict_date) ***
+#Set predict date (x = predict_date) ***Input Date predict
 ```{r}
 x = (c('2013-07-20',
 '2013-10-06',
@@ -412,7 +412,7 @@ x = (c('2013-07-20',
 '2016-09-18'))
 ```
 
-#Set predict value (xx = predict_value) ***
+#Set predict value (xx = predict_value) *** Input Date value
 ```{r}
 xx = (c('moving down',
 'moving down',
@@ -791,7 +791,7 @@ xx = (c('moving down',
 
 #Create predict Data Frame (x,xx)
 ```{r}
-predictDataFrame = data.frame(day=x, predic=xx)
+predictDataFrame = data.frame(day=x, predict=xx)
 
 ```
 --------------- Create Predict DataFrame ---------------
@@ -910,29 +910,89 @@ while(i <= length(total[,1])) {
   
   i <- i + 1
 }
-ConfusionDataFrame = data.frame(day=y, Confusion_Matrix1=Confusion_Matrix)
+ConfusionDataFrame = data.frame(day=y, Confusion_Matrix=Confusion_Matrix)
 total = merge(total, ConfusionDataFrame, by="day")
-
+rm(i)
 ```
 ```{r}
-print(length(Confusion_Matrix))
+rm(i)
 ```
 
 --------------- Check predict result (Set Confusion_Matrix) and merge to total ---------------
 
-#test
+############## Sum of "TP", "FP", "FN", "TN", "-" ##############
 ```{r}
-#paste("Hello", "world", sep=" ")
-#nn = "_Daily_Price_focus.xlsx"
-#show1 = paste(symbol, nn, sep="")
-#print(show1)
+a <- table(total[,5])
+TP <- a[names(a)=="TP"]
+FP <- a[names(a)=="FP"]
+FN <- a[names(a)=="FN"]
+TN <- a[names(a)=="TN"]
+Na <- a[names(a)=="Nan"]
+n <- a[names(a)=="-"]
+Total_Data = TP + FP + FN + TN + Na + n
 
+Correctly_Classified = TP + TN
+Incorrectly_Classified = FP + FN
+
+#True Positive Rate
+TPR_Yes <- TP/(TP+FN)
+TPR_No <- TN/(FP+TN)
+
+#False Positive Rate
+FPR_Yes <- FP/(FP+TN)
+FPR_No <- FN/(TP+FN)
+
+#Precision: Positive Value (PPV)
+PPV_Yes <- TP/(TP+TN)
+PPV_No <- TN/(TN+FN)
+
+#Recall
+Recall_Yes <- TP/(TP+FN)
+Recall_No <- TN/(TN+FP)
+
+#Accuracy
+Accuracy <- (TP + TN) / (TP + TN + FP +FN)
+
+#F-Measure
+F.Measure_Yes <- (2*PPV_Yes * Recall_Yes) / (PPV_Yes + Recall_Yes)
+F.Measure_No <- (2*PPV_No * Recall_No) / (PPV_No + Recall_No)
+
+result = data.frame(Total_Data = Total_Data, TP=TP, FP=FP, FN=FN , TN=TN , Nan=Na , unchanged =n, Correctly_Classified=Correctly_Classified, Incorrectly_Classified=Incorrectly_Classified, TPR_Yes = TPR_Yes, TPR_No = TPR_No, FPR_Yes = FPR_Yes, FPR_No=FPR_No, PPV_Yes= PPV_Yes, PPV_No=PPV_No, Recall_Yes=Recall_Yes, Recall_No= Recall_No, Accuracy=Accuracy,F.Measure_Yes= F.Measure_Yes, F.Measure_No=F.Measure_No)
+
+m_data <- (c(Total_Data, 
+TP, 
+FP, 
+FN , 
+TN , 
+Na, 
+n, 
+Correctly_Classified, 
+Incorrectly_Classified, 
+TPR_Yes, 
+TPR_No , 
+FPR_Yes, 
+FPR_No, 
+PPV_Yes, 
+PPV_No, 
+Recall_Yes, 
+Recall_No, 
+Accuracy,
+F.Measure_Yes, 
+F.Measure_No))
+
+setCol <- c('Value')
+setRow<-c('Total_Data', 'TP', 'FP', 'FN', 'TN', 'Nan', 'unchanged', 'Correctly_Classified', 'Incorrectly_Classified', 'TPR_Yes', 'TPR_No', 'FPR_Yes', 'FPR_No', 'PPV_Yes', 'PPV_No', 'Recall_Yes', 'Recall_No', 'Accuracy', 'F.Measure_Yes', 'F.Measure_No'
+)
+
+result1<- matrix(m_data, nrow = length(m_data), ncol = , byrow = FALSE, dimnames = list(setRow, setCol))
 ```
+
 
 
 Creat excel file
 ```{r}
-#write.xlsx(cvx_focus_price, file="CVX_Daily_Price_focus.xlsx", sheetName="Sheet1", col.names=TRUE, row.names=TRUE, append=FALSE)
+write.xlsx(total, file=fileName, sheetName="Data", col.names=TRUE, row.names=TRUE, append=FALSE)
+write.xlsx(result1, file=fileName, sheetName="Result", col.names=TRUE, row.names=TRUE, append=TRUE)
 ```
 
 
