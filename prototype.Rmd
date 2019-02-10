@@ -792,6 +792,7 @@ xx = (c('moving down',
 #Create predict Data Frame (x,xx)
 ```{r}
 predictDataFrame = data.frame(day=x, predic=xx)
+
 ```
 --------------- Create Predict DataFrame ---------------
 
@@ -816,7 +817,7 @@ Actual_price <- ClosePrice[x]
 y <- (index(Actual_price))
 y <- as.factor(y) #convert dataType to factor
 
-#rm(ClosePrice)
+rm(ClosePrice)
 ```
 --------------- Get Stock Price ---------------
 
@@ -842,6 +843,7 @@ while (ii <= length(Actual_price_Matrix)) {
 
 actualDataFrame = data.frame(day=y, actualPrice=yy) #Create actualDataFrame
 
+rm(ii)
 rm(Actual_price)
 rm(Actual_price_Matrix)
 
@@ -849,25 +851,74 @@ rm(Actual_price_Matrix)
 --------------- Manage Actual dataType and Create Actual DataFrame ---------------
 
 
-############## Merge predictDataFrame and actualDataFrame ##############
+############## Merge predictDataFrame and actualPriceDataFrame ##############
 # Merge predicDataFrame and ClosePrice
 ```{r}
 total = merge(predictDataFrame, actualDataFrame, by="day")
+rm(predictDataFrame, actualDataFrame)
 ```
---------------- Merge predictDataFrame and actualDataFrame ---------------
+--------------- Merge predictDataFrame and actualPriceDataFrame ---------------
 
-############## Merge predictDataFrame and actualDataFrame ##############
+
+############## Create Actual result and merge to total DataFrame ##############
 ```{r}
+Actual <- (c("Nan")) #Actual is result of price[i] - price[i-1].
+price <- total[,3] #Get price data from total DataFrame col3.
+
+i <- 2 #Start at row2.
+
+while(i <= length(price)) {
+   n = price[i] - price[i-1]
+  
+  if(n > 0) {
+    Actual = append(Actual, "moving up")
+  } else if(n < 0) {
+    Actual = append(Actual, "moving down")
+  } else {
+    Actual = append(Actual, "unchanged")
+  }
+  i <- i + 1
+}
+
+ActualPredict_DataFrame = data.frame(day=y,Actual = Actual) # Create Actual DataFrame
+total = merge(total, ActualPredict_DataFrame, by="day") # merge Actual to main DataFrame (total)
 
 ```
+--------------- Create Actual result and merge to total DataFrame ---------------
 
+
+############## Check predict result (Set Confusion_Matrix) and merge to total ##############
 ```{r}
-#print(class(predictDataFrame[,1][1]))
-#print(class(actualDataFrame[,1][1]))
-#
-#print(predictDataFrame[,1][1])
-#print(actualDataFrame[,1][1])
+i <- 2
+Confusion_Matrix <- (c('Nan'))
+while(i <= length(total[,1])) {
+  if(total[,2][i] == "moving up") {
+    if(total[,4][i] == "moving up") {
+      Confusion_Matrix = append(Confusion_Matrix, "TP")
+    } else {
+      Confusion_Matrix = append(Confusion_Matrix, "FP")
+    }
+  } else if(total[,2][i] == "moving down") {
+    if(total[,4][i] == "moving up") {
+      Confusion_Matrix = append(Confusion_Matrix, "FN")
+    } else {
+      Confusion_Matrix = append(Confusion_Matrix, "TN")
+    }
+  } else if(total[,2][i] == "unchanged") {
+    Confusion_Matrix = append(Confusion_Matrix, "-")
+  }
+  
+  i <- i + 1
+}
+ConfusionDataFrame = data.frame(day=y, Confusion_Matrix1=Confusion_Matrix)
+total = merge(total, ConfusionDataFrame, by="day")
+
 ```
+```{r}
+print(length(Confusion_Matrix))
+```
+
+--------------- Check predict result (Set Confusion_Matrix) and merge to total ---------------
 
 #test
 ```{r}
